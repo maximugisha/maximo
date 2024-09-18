@@ -24,7 +24,8 @@ RUN apt-get update -qq -y && \
 RUN dpkg-reconfigure locales
 
 # Install Webmin
-RUN echo root:password | chpasswd && \
+RUN apt-get update -qq -y && \ 
+    echo root:password | chpasswd && \
     echo "Acquire::GzipIndexes \"false\"; Acquire::CompressionTypes::Order:: \"gz\";" >/etc/apt/apt.conf.d/docker-gzip-indexes && \
     update-locale LANG=C.UTF-8 && \
     echo deb https://download.webmin.com/download/repository sarge contrib >> /etc/apt/sources.list && \
