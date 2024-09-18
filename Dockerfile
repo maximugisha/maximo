@@ -1,20 +1,46 @@
-# Use an official Ubuntu base image
+# Use the latest Ubuntu image as a parent
 FROM ubuntu:focal
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive TZ=Australia/Brisbane
 
-# Install necessary packages
-RUN apt-get update && \
-    apt-get install -y wget apt-transport-https software-properties-common gnupg && \
-    wget -qO - http://www.webmin.com/jcameron-key.asc | apt-key add - && \
-    add-apt-repository "deb http://download.webmin.com/download/repository sarge contrib" && \
+# Initial updates and install core utilities
+# net-tools = ifconfig, ip
+RUN apt-get update -qq -y && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+       wget \
+       curl \
+       apt-transport-https \
+       lsb-release \ 
+       ca-certificates \
+       gnupg2 \
+       software-properties-common \
+       locales \
+       cron    \
+       net-tools \
+       vim \
+       docker \ 
+       docker-compose
+RUN dpkg-reconfigure locales
+
+# Install Webmin
+RUN echo root:password | chpasswd && \
+    echo "Acquire::GzipIndexes \"false\"; Acquire::CompressionTypes::Order:: \"gz\";" >/etc/apt/apt.conf.d/docker-gzip-indexes && \
+    update-locale LANG=C.UTF-8 && \
+    echo deb https://download.webmin.com/download/repository sarge contrib >> /etc/apt/sources.list && \
+    wget http://www.webmin.com/jcameron-key.asc && \
+    apt-key add jcameron-key.asc && \
     apt-get update && \
     apt-get install -y webmin && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    echo "$(cat /etc/webmin/webmin.acl) docker" > /etc/webmin/webmin.acl
 
-# Expose the Webmin port
 EXPOSE 10000
+ENV LC_ALL C.UTF-8
 
-# Command to run Webmin
-CMD ["/usr/share/webmin/miniserv.pl", "/etc/webmin/miniserv.conf"]
+WORKDIR /home
+RUN echo "#! /bin/bash" > entrypoint.sh && \
+    echo "sed -i 's;ssl=1;ssl=0;' /etc/webmin/miniserv.conf && systemctl enable cron && service webmin start && tail -f /dev/null" >> entrypoint.sh && \
+    chmod 755 entrypoint.sh
+
+CMD /home/entrypoint.sh
