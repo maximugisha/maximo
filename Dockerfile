@@ -1,7 +1,7 @@
 # Use the latest Ubuntu image as a parent
 FROM ubuntu:focal
 
-ENV DEBIAN_FRONTEND=noninteractive TZ=Australia/Brisbane
+ENV DEBIAN_FRONTEND=noninteractive TZ=Africa/Kampala
 
 # Initial updates and install core utilities
 # net-tools = ifconfig, ip
@@ -25,7 +25,7 @@ RUN dpkg-reconfigure locales
 
 # Install Webmin
 RUN apt-get update -qq -y && \ 
-    echo maximo:upbeat123 | chpasswd && \
+    echo root:password | chpasswd && \
     echo "Acquire::GzipIndexes \"false\"; Acquire::CompressionTypes::Order:: \"gz\";" >/etc/apt/apt.conf.d/docker-gzip-indexes && \
     update-locale LANG=C.UTF-8 && \
     echo deb https://download.webmin.com/download/repository sarge contrib >> /etc/apt/sources.list && \
@@ -34,7 +34,8 @@ RUN apt-get update -qq -y && \
     apt-get update && \
     apt-get install -y webmin && \
     apt-get clean && \
-    echo "$(cat /etc/webmin/webmin.acl) docker" > /etc/webmin/webmin.acl
+    echo "$(cat /etc/webmin/webmin.acl) docker" > /etc/webmin/webmin.acl \
+    echo "referers=max-cbf9425e-ea49-42b4-af53.renu-01.cranecloud.io" > /etc/webmin/config
 
 EXPOSE 10000
 ENV LC_ALL C.UTF-8
